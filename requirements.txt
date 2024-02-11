@@ -3,3 +3,4 @@ markdown2
 selenium
 bardapi
 python-dotenv
+google-generativeai
