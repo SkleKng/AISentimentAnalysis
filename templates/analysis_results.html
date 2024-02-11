@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #333;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        #analysis-content {
+            overflow-x: auto;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #444;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        ol {
+            list-style-type: decimal;
+            margin-top: 0;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        strong {
+            font-weight: bold;
+            color: #00bfff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Analysis Results</h1>
+        <div id="analysis-content">
+            {{ analysis_result|safe }}
+        </div>
+    </div>
+</body>
+</html>
