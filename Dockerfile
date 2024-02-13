@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+#WIP NOT TO BE USED
+
 FROM selenium/standalone-chrome
 USER root
 WORKDIR /python-docker
