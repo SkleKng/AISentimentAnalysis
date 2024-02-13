@@ -162,3 +162,4 @@ cython_debug/
 keyword.txt
 tweets.txt
 output.md
+nohup.out

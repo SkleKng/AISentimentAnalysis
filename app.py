@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for
-from time import sleep
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -15,9 +14,13 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from flask import jsonify
 import markdown2
 import threading
+from selenium.webdriver.chrome.service import Service
+import chromedriver_autoinstaller
+
 
 app = Flask(__name__)
 progress_messages = []
+chromedriver_autoinstaller.install()
 
 @app.route('/')
 def index():
@@ -28,15 +31,19 @@ def analyze_tweets():
     progress_messages.clear()
     keyword = request.form['keyword']
     tweet_count = request.form['tweet_count']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    print(start_date)
+    print(end_date)
 
-    analysis_thread = threading.Thread(target=run_analysis, args=(keyword, tweet_count))
+    analysis_thread = threading.Thread(target=run_analysis, args=(keyword, tweet_count, start_date, end_date))
     analysis_thread.start()
 
     return redirect(url_for('analysis_progress'))
 
-def run_analysis(keyword, tweet_count):
+def run_analysis(keyword, tweet_count, start_date, end_date):
     cookies = get_twitter_session_cookie()
-    tweets = scrape_tweets_with_keyword(cookies, keyword, max_tweets=int(tweet_count))
+    tweets = scrape_tweets_with_keyword(cookies, keyword, int(tweet_count), start_date, end_date)
 
     if len(tweets) == 0:
         return "No tweets found. Exiting..."
@@ -69,17 +76,19 @@ def progress_route():
 
 def get_twitter_session_cookie():
     load_dotenv()
+    path = os.getenv("EXECUTABLE_PATH")
     username = os.getenv("TWITTER_USERNAME")
     password = os.getenv("TWITTER_PASSWORD")
+    service = Service(executable_path=path)
     options = Options()
     options.add_argument("--headless")  # Run Chrome in headless mode
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options, service=service)
     driver.get('https://twitter.com/login')
     
     print("Logging into Twitter...")
     progress_messages.append("Logging into Twitter...")
     
-    username_input = WebDriverWait(driver, 10).until(
+    username_input = WebDriverWait(driver, 20).until(
         EC.visibility_of_element_located((By.XPATH, "//input[@autocomplete='username']"))
     )
     username_input.clear()
@@ -108,10 +117,13 @@ def get_twitter_session_cookie():
     session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
     return session_cookies
 
-def scrape_tweets_with_keyword(cookies, keyword, max_tweets=20):
+def scrape_tweets_with_keyword(cookies, keyword, max_tweets, start_date, end_date):
     options = Options()
+    load_dotenv()
+    path = os.getenv("EXECUTABLE_PATH")
+    service = Service(executable_path=path)
     options.add_argument("--headless")  # Run Chrome in headless mode
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options, service=service)
     
     driver.get("https://twitter.com/")
     
@@ -125,7 +137,10 @@ def scrape_tweets_with_keyword(cookies, keyword, max_tweets=20):
     progress_messages.append("Scraping tweets...")
 
     base_url = "https://twitter.com/search?q="
-    query = keyword + "%20since%3A" + (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    start_datetime = datetime.strptime(start_date, "%B %d, %Y")
+    end_datetime = datetime.strptime(end_date, "%B %d, %Y")
+    query = f"{keyword}%20since%3A{start_datetime.strftime('%Y-%m-%d')}%20until%3A{end_datetime.strftime('%Y-%m-%d')}"
+    print(query)
     url = base_url + query
     
     driver.get(url)
@@ -209,7 +224,7 @@ def pass_through_ai():
     with open("keyword.txt", "r", encoding="utf-8") as file:
         keyword = file.read()
 
-    prompt = f"I have below a list of tweets regarding {keyword}. Analyze the tweets and come up with a list of 5 concerns people have about this company and the overall consensus about {keyword}. The tweets are as follows: \n\n"
+    prompt = f"I have below a list of tweets regarding {keyword}. Analyze the tweets and come up with a list of 5 concerns people have about {keyword} and the overall consensus about {keyword}. The tweets are as follows: \n\n"
 
     with open("tweets.txt", "r", encoding="utf-8") as file:
         prompt += file.read()
